@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>French Fry Game</title>
+<style>
+  :root{--bg1:#0f1724;--bg2:#071021;--glass-border:rgba(255,255,255,0.06)}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;color:white;background:radial-gradient(1200px 600px at 10% 10%, rgba(255,160,80,0.04), transparent), linear-gradient(180deg,var(--bg1),var(--bg2));-webkit-font-smoothing:antialiased}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px}
+  .shell{width:980px;max-width:98%;display:grid;grid-template-columns:1fr 380px;gap:24px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid var(--glass-border);backdrop-filter: blur(8px);border-radius:18px;padding:22px;box-shadow:0 10px 40px rgba(2,6,23,0.6)}
+  h1{margin:0;font-size:36px;letter-spacing:-0.5px;background:linear-gradient(90deg,#ffb74d,#ff8a65);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .subtitle{margin-top:6px;color:rgba(255,255,255,0.65);font-size:14px}
+  .start-area{display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+  .start-btn{appearance:none;border:none;padding:14px 20px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,#ffb74d,#ff8a65);box-shadow:0 12px 30px rgba(255,138,101,0.12);color:#111}
+  .select{background:transparent;border:1px solid var(--glass-border);padding:8px 10px;border-radius:10px;color:rgba(255,255,255,0.8)}
+  .glass{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+  .tiny{font-size:13px;color:rgba(255,255,255,0.65)}
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:60}
+  .overlay .popup{width:880px;max-width:100%;border-radius:20px;padding:24px;background:linear-gradient(180deg, rgba(12,18,30,0.96), rgba(6,10,18,0.96));border:1px solid rgba(255,255,255,0.04);box-shadow:0 40px 120px rgba(2,6,23,0.6);transform:scale(0.9);opacity:0;transition:all 220ms cubic-bezier(.2,.9,.2,1)}
+  .overlay.show .popup{transform:scale(1);opacity:1}
+  .game-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .score-display{font-size:44px;font-weight:800}
+  .timer-pill{background:linear-gradient(90deg,#111827,#0b1220);padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.03);font-weight:700}
+  .fry-btn{margin:18px auto 0;display:block;border-radius:22px;padding:20px 40px;font-size:36px;font-weight:800;border:none;cursor:pointer;background:linear-gradient(90deg,#ffde9a,#ff8a65);color:#111;box-shadow:0 18px 40px rgba(255,138,101,0.12);transition:transform 80ms}
+  .fry-btn:active{transform:scale(0.98)}
+  .progress{height:12px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffb74d,#ff8a65);width:100%;transition:width 200ms linear}
+  .modal-bg{position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.6));display:flex;align-items:center;justify-content:center;z-index:80}
+  .modal{width:640px;max-width:94%;border-radius:14px;padding:18px;background:linear-gradient(180deg,#06111a,#08131c);border:1px solid rgba(255,255,255,0.03)}
+  .tos{height:220px;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
+  .agree-row{display:flex;gap:12px;align-items:center;margin-top:12px}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px 12px;border-radius:10px;color:rgba(255,255,255,0.85);cursor:pointer}
+  .btn-primary{background:linear-gradient(90deg,#ffb74d,#ff8a65);border:none;padding:10px 14px;border-radius:10px;color:#111;font-weight:700;cursor:pointer}
+  .result-score{font-size:48px;font-weight:900;color:#ff8a65;text-align:center;margin:10px 0}
+  .result-actions{display:flex;gap:10px;justify-content:center;margin-top:10px}
+  @media (max-width:980px){.shell{grid-template-columns:1fr} .card{padding:16px} h1{font-size:28px}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="shell">
+      <div class="card start-area">
+        <h1>🍟 French Fry Contest</h1>
+        <div class="subtitle">Press Start, accept the quick terms, then play and just spam the eat button to get a score!</div>
+
+        <div style="margin-top:18px" class="controls">
+          <label class="tiny">Round (fixed):</label>
+          <div class="select" style="padding:8px 12px;border-radius:10px;">1 minute</div>
+          <button id="openStart" class="start-btn">Start</button>
+        </div>
+
+      </div>
+
+  <!-- TOS Modal -->
+  <div id="tosModal" class="modal-bg" style="display:none">
+    <div class="modal">
+      <h3>Terms of Service</h3>
+      <div class="tos">
+        <p><strong>READ IT:</strong></p>
+        <p>By clicking "Agree & Play" you agree that the fries are made up with every kind of oils, expired olive oil, motor oil, EVERY KIND OF. If you don't feel right after eating the fries then don't blame me, i dont give a fuck, anyways good luck..</p>
+      </div>
+
+      <div class="agree-row">
+        <label style="display:flex;align-items:center;gap:8px"><input id="agreeChk" type="checkbox"> <span class="tiny">I have read and agree to these terms.</span></label>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:14px;gap:10px">
+        <button id="tosCancel" class="btn-ghost">Cancel</button>
+        <button id="tosAgree" class="btn-primary" disabled>Agree & Play</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Overlay Popup -->
+  <div id="gameOverlay" class="overlay" style="display:none">
+    <div class="popup">
+      <div class="game-top">
+        <div class="score-display">🍟 <span id="scoreLarge">0</span></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <div class="timer-pill">Time: <span id="timeLeft">60</span>s</div>
+          <div style="width:220px" class="progress"><i id="barFill" style="width:100%"></i></div>
+        </div>
+      </div>
+
+      <button id="bigFry" class="fry-btn">🍟 EAT FRY</button>
+
+      <div style="margin-top:14px;display:flex;justify-content:center;gap:12px">
+        <button id="gameStop" class="btn-ghost">Stop</button>
+        <button id="gameClose" class="btn-ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Modal -->
+  <div id="resultModal" class="modal-bg" style="display:none">
+    <div class="modal">
+      <div style="text-align:center">
+        <div class="tiny">Round Complete</div>
+        <div class="result-score" id="resultScore">🍟 0</div>
+        
+        <div class="result-actions">
+          <button id="playAgain" class="btn-primary">Play Again</button>
+          <button id="closeResult" class="btn-ghost">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Effects canvas (no sound) -->
+  <canvas id="effects" style="position:fixed;inset:0;pointer-events:none;z-index:20"></canvas>
+
+<script>
+// Wrap all logic in DOMContentLoaded so element refs will not be null
+window.addEventListener('DOMContentLoaded', ()=>{
+  // Element refs (must match IDs above)
+  const openStart = document.getElementById('openStart');
+  const tosModal = document.getElementById('tosModal');
+  const agreeChk = document.getElementById('agreeChk');
+  const tosAgree = document.getElementById('tosAgree');
+  const tosCancel = document.getElementById('tosCancel');
+  const gameOverlay = document.getElementById('gameOverlay');
+  const bigFry = document.getElementById('bigFry');
+  const scoreLarge = document.getElementById('scoreLarge');
+  const timeLeftEl = document.getElementById('timeLeft');
+  const barFill = document.getElementById('barFill');
+  const gameStop = document.getElementById('gameStop');
+  const gameClose = document.getElementById('gameClose');
+  const resultModal = document.getElementById('resultModal');
+  const resultScore = document.getElementById('resultScore');
+  const playAgain = document.getElementById('playAgain');
+  const closeResult = document.getElementById('closeResult');
+  const effectsCanvas = document.getElementById('effects');
+
+  // Sanity checks — if any critical element is missing, bail and log helpful error
+  const required = {openStart,tosModal,agreeChk,tosAgree,tosCancel,gameOverlay,bigFry,scoreLarge,timeLeftEl,barFill,gameStop,gameClose,resultModal,resultScore,playAgain,closeResult,effectsCanvas};
+  for(const [k,v] of Object.entries(required)){
+    if(!v){ console.error(`Required element '${k}' is missing from the DOM.`); }
+  }
+
+  // Effects canvas setup
+  const ctx = effectsCanvas.getContext('2d'); function resize(){ effectsCanvas.width = innerWidth; effectsCanvas.height = innerHeight; } resize(); addEventListener('resize', resize);
+  let particles = [];
+  function spawnEatEffect(x,y,count=18){ for(let i=0;i<count;i++){ particles.push({x,y,vx:(Math.random()-0.5)*8, vy:(Math.random()-1.8)*8, life:40+Math.random()*40, size:6+Math.random()*10, col: ['#ffd54f','#ffb74d','#ff8a65'][Math.floor(Math.random()*3)] }) } }
+  function runEffects(){ ctx.clearRect(0,0,effectsCanvas.width,effectsCanvas.height); for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.life--; ctx.globalAlpha = Math.max(0, p.life/80); ctx.fillStyle = p.col; ctx.beginPath(); ctx.ellipse(p.x,p.y,p.size,p.size/2, 0,0,Math.PI*2); ctx.fill(); if(p.life<=0) particles.splice(i,1); } requestAnimationFrame(runEffects); } runEffects();
+
+  // Game state
+  let score = 0; const totalTime = 60; // fixed 1 minute as requested
+  let timeLeft = totalTime; let timer = null; let clickGuard = false;
+
+  function openTOS(){ tosModal.style.display = 'flex'; agreeChk.checked = false; tosAgree.disabled = true; }
+  function closeTOS(){ tosModal.style.display = 'none'; }
+
+  openStart.addEventListener('click', openTOS);
+  tosCancel.addEventListener('click', ()=>{ closeTOS(); });
+  agreeChk.addEventListener('change', ()=>{ tosAgree.disabled = !agreeChk.checked; });
+
+  // When user agrees: start the round
+  tosAgree.addEventListener('click', ()=>{
+    closeTOS();
+    score = 0; timeLeft = totalTime; updateOverlayUI(); openOverlay(); startTimer();
+  });
+
+  function openOverlay(){ gameOverlay.style.display = 'flex'; setTimeout(()=> gameOverlay.classList.add('show'), 20); }
+  function closeOverlay(){ gameOverlay.classList.remove('show'); setTimeout(()=> gameOverlay.style.display = 'none', 220); }
+
+  function startTimer(){ if(timer) clearInterval(timer); updateOverlayUI(); timer = setInterval(()=>{ timeLeft--; updateOverlayUI(); if(timeLeft<=0){ finishRound(); } }, 1000); }
+  function stopTimer(){ if(timer) clearInterval(timer); timer = null; }
+
+  function updateOverlayUI(){ if(timeLeftEl) timeLeftEl.textContent = String(Math.max(0, timeLeft)); if(barFill) barFill.style.width = Math.max(0, (timeLeft/totalTime*100)) + '%'; if(scoreLarge) scoreLarge.textContent = String(score); }
+
+  function eatAction(){ if(timeLeft<=0) return; if(clickGuard) return; clickGuard = true; setTimeout(()=>clickGuard=false,45); score += 1; updateOverlayUI(); const cx = innerWidth/2 + (Math.random()-0.5)*240; const cy = innerHeight/2 + (Math.random()-0.5)*120; spawnEatEffect(cx,cy,16); }
+
+  bigFry.addEventListener('click', eatAction);
+  window.addEventListener('keydown', (e)=>{ if(e.code === 'Space'){ e.preventDefault(); eatAction(); } });
+
+  function finishRound(){ stopTimer(); updateOverlayUI(); closeOverlay(); showResult();  }
+
+  function showResult(){ resultScore.textContent = `🍟 ${score}`; resultModal.style.display = 'flex'; setTimeout(()=> resultModal.classList.add('show'), 10); }
+  function hideResult(){ resultModal.classList.remove('show'); setTimeout(()=> resultModal.style.display = 'none', 220); }
+
+  playAgain.addEventListener('click', ()=>{ hideResult(); score = 0; timeLeft = totalTime; updateOverlayUI(); openOverlay(); startTimer(); });
+  closeResult.addEventListener('click', ()=>{ hideResult(); });
+
+  gameStop.addEventListener('click', ()=>{ if(confirm('Stop the round early?')) finishRound(); });
+  gameClose.addEventListener('click', ()=>{ if(confirm('Close the arena and end the round?')) finishRound(); });
+
+  // Save last session locally (simple)
+
+  // Defensive: ensure UI reflects initial fixed timer
+  
+});
+</script>
+</body>
+  </html>
